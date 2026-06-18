@@ -40,8 +40,8 @@ class UnifiedPost:
     platform: str
     platform_post_id: str
     author_id: str
-    author_name: str | None = None
     content_type: str  # "text" | "image" | "video" | "story" | "reel"
+    author_name: str | None = None
     text: str = ""
     media: list[MediaRef] = field(default_factory=list)
     metrics: EngagementMetrics = field(default_factory=EngagementMetrics)
@@ -84,6 +84,65 @@ class UnifiedComment:
     reply_to_comment_id: str | None = None
     published_at: datetime | None = None
     collected_at: datetime = field(default_factory=datetime.utcnow)
+
+
+# ── 直播专用数据模型 ──────────────────────────────────────
+
+@dataclass
+class UnifiedDanmaku:
+    """
+    统一弹幕/直播评论模型
+    适用于 Bilibili 弹幕、Twitch Chat、YouTube Live Chat 等
+    """
+    platform: str
+    platform_danmaku_id: str  # 弹幕唯一 ID (有些平台没有，可用时间戳 + 随机数生成)
+    platform_live_id: str     # 直播间 ID
+    author_id: str
+    author_name: str
+    text: str
+    published_at: datetime
+    collected_at: datetime = field(default_factory=datetime.utcnow)
+    
+    # 弹幕特有属性
+    color: str | None = None          # 弹幕颜色 (如 "#FFFFFF")
+    is_gift: bool = False             # 是否为礼物消息
+    gift_value: float | None = None   # 礼物价值 (标准化后的金币数)
+    gift_name: str | None = None      # 礼物名称
+    badge_level: int | None = None    # 粉丝牌等级
+    badge_name: str | None = None     # 粉丝牌名称
+    user_level: int | None = None     # 用户等级
+    is_moderator: bool = False        # 是否为房管
+    is_vip: bool = False              # 是否为舰长/VIP
+    raw_data: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class UnifiedLiveStream:
+    """
+    统一直播流模型
+    适用于各平台的直播信息
+    """
+    platform: str
+    platform_live_id: str
+    author_id: str
+    author_name: str
+    title: str
+    description: str | None = None
+    status: str = "live"  # "live" | "ended" | "upcoming"
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    viewer_count: int | None = None
+    max_viewer_count: int | None = None
+    total_likes: int | None = None
+    total_comments: int | None = None
+    total_gifts_value: float | None = None
+    cover_url: str | None = None
+    stream_url: str | None = None
+    tags: list[str] = field(default_factory=list)
+    category: str | None = None
+    extra: dict[str, Any] = field(default_factory=dict)
+    collected_at: datetime = field(default_factory=datetime.utcnow)
+    raw_data: dict[str, Any] = field(default_factory=dict)
 
 
 # ── 采集参数 ──────────────────────────────────────────────
@@ -166,6 +225,46 @@ class BaseAdapter(ABC):
         if capability_name not in supported:
             raise CapabilityNotSupported(capability_name, self.platform)
         raise NotImplementedError
+    
+    # -- 直播相关方法（可选实现）--
+    
+    async def fetch_live_stream(self, live_id: str) -> UnifiedLiveStream | None:
+        """
+        获取直播流信息
+        默认返回 None，支持直播的平台需重写此方法
+        """
+        return None
+    
+    async def fetch_danmaku(
+        self, live_id: str, params: FetchParams
+    ) -> AsyncIterator[UnifiedDanmaku]:
+        """
+        获取弹幕/直播评论
+        默认返回空迭代器，支持弹幕的平台需重写此方法
+        
+        Args:
+            live_id: 直播间 ID
+            params: 采集参数（limit 限制每次获取数量）
+        
+        Yields:
+            UnifiedDanmaku: 弹幕数据
+        """
+        # 空实现，支持直播的平台需重写
+        if False:
+            yield  # pragma: no cover
+    
+    async def subscribe_danmaku(
+        self, live_id: str, callback: callable
+    ) -> None:
+        """
+        订阅实时弹幕流（WebSocket 或长轮询）
+        默认抛出 NotImplementedError，支持实时订阅的平台需重写
+        
+        Args:
+            live_id: 直播间 ID
+            callback: 回调函数，接收 UnifiedDanmaku 对象
+        """
+        raise NotImplementedError("该平台不支持实时弹幕订阅")
     
     # -- 生命周期 --
     

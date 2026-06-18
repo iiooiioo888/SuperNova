@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
-from ..config import settings
+from backend.config import settings
 
 logger = structlog.get_logger()
 

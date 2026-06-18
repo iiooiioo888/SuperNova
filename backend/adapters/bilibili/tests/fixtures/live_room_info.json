@@ -1,0 +1,56 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "room_info": {
+      "uid": 123456789,
+      "room_id": 123456,
+      "short_id": 0,
+      "title": "【直播】SuperHub 项目开发中",
+      "cover": "https://i0.hdslb.com/bfs/live/room_cover/example.jpg",
+      "play_url": "https://live.bilibili.com/123456",
+      "live_status": 1,
+      "live_screen_type": 0,
+      "lock_status": 0,
+      "lock_time": 0,
+      "hide_status": 0,
+      "hide_time": 0,
+      "area_id": 10,
+      "area_name": "科技区",
+      "parent_area_id": 1,
+      "parent_area_name": "学习",
+      "keyframe": "https://i0.hdslb.com/bfs/live/keyframe/example.jpg",
+      "on_show_status": 0,
+      "on_show_time": 0,
+      "official_type": 0,
+      "official_room_id": 0,
+      "view_count": 15234,
+      "max_view_count": 20000,
+      "online": 15234,
+      "room_type": {
+        "id": 1,
+        "name": "普通直播间"
+      },
+      "sub_session_key": "",
+      "special_attention": 0,
+      "background": "",
+      "medal_list": []
+    },
+    "anchor_info": {
+      "uid": 123456789,
+      "uname": "示例 UP 主",
+      "face": "https://i0.hdslb.com/bfs/face/example.jpg",
+      "level": 20,
+      "is_official": false,
+      "official_verify": {
+        "type": -1,
+        "desc": ""
+      }
+    },
+    "news_info": {
+      "content": "欢迎来到直播间！",
+      "url": "",
+      "timestamp": 1704067200
+    }
+  }
+}
