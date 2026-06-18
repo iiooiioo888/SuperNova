@@ -1,4 +1,4 @@
-# SuperHub — 统一社交数据采集平台
+# SuperNova — 统一社交数据采集平台
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)
@@ -15,11 +15,11 @@
 | 特性 | 说明 | 状态 |
 |------|------|------|
 | 🔄 **插件化适配器** | 统一接口设计，轻松接入新平台（B 站/抖音/微博/Instagram/Telegram） | ✅ |
-| 📊 **三层存储架构** | MongoDB（原始数据）+ PostgreSQL（标准化）+ Elasticsearch（检索） | ✅ |
-| 🛡️ **企业级容错** | 熔断器、差异化重试、账号池管理、代理池评分 | ✅ |
+| 📊 **三层存储架构** | MongoDB（原始数据）+ PostgreSQL（标准化）+ Elasticsearch（检索） | 🚧 |
+| 🛡️ **企业级容错** | 熔断器、差异化重试、账号池管理、代理池评分 | 🚧 |
 | 🎛️ **动态功能开关** | 四层控制（全局/平台/功能/策略），支持热更新无需重启 | ✅ |
-| 🔐 **RBAC 权限控制** | 精细化权限控制，仅运维可操作熔断等关键功能 | ✅ |
-| 🧪 **AB 测试框架** | 基于灰度开关的实验分组，支持流量比例控制 | 🚧 |
+| 🔐 **RBAC 权限控制** | 精细化权限控制，仅运维可操作熔断等关键功能 | 📋 |
+| 🧪 **AB 测试框架** | 基于灰度开关的实验分组，支持流量比例控制 | 📋 |
 | 🤖 **智能预测** | ML 模型预测最佳恢复时间，自动优化调度策略 | 📋 |
 | 🌍 **多环境同步** | 开发/测试/生产环境配置一致性管理 | 📋 |
 | 📈 **可观测性** | Prometheus 指标 + Grafana 仪表板 + structlog 结构化日志 | 🚧 |
@@ -68,7 +68,7 @@
 ## 📁 项目结构
 
 ```
-SuperHub/
+SuperNova/
 ├── backend/
 │   ├── main.py                     # FastAPI 入口
 │   ├── config.py                   # 配置管理（Pydantic Settings）
@@ -459,128 +459,6 @@ CREATE INDEX idx_posts_platform_author ON unified_posts(platform, author_id);
 CREATE INDEX idx_posts_published ON unified_posts(platform, published_at DESC);
 ```
 
-## 项目结构
-
-```
-SuperHub/
-├── backend/
-│   ├── main.py                     # FastAPI 入口
-│   ├── config.py                   # 配置管理（Pydantic Settings）
-│   ├── api/
-│   │   ├── v1/
-│   │   │   ├── tasks.py            # 任务 CRUD API
-│   │   │   ├── platforms.py        # 平台管理 API
-│   │   │   ├── accounts.py         # 账号池 API
-│   │   │   ├── data.py             # 数据查询 API
-│   │   │   ├── feature_flags.py    # ✅ 功能开关管理 API
-│   │   │   └── health.py           # 健康检查
-│   │   └── deps.py                 # 依赖注入
-│   ├── adapters/
-│   │   ├── base.py                 # BaseAdapter + 数据模型
-│   │   ├── registry.py             # 适配器注册表
-│   │   ├── bilibili/
-│   │   │   ├── __init__.py
-│   │   │   ├── adapter.py          # ✅ BilibiliAdapter 实现
-│   │   │   ├── parser.py           # 响应解析
-│   │   │   ├── constants.py
-│   │   │   └── tests/
-│   │   │       ├── test_adapter.py
-│   │   │       └── fixtures/       # Mock 响应样本
-│   │   ├── douyin/                 # 📋 计划中
-│   │   ├── weibo/                  # 📋 计划中
-│   │   ├── instagram/              # 📋 计划中
-│   │   ├── telegram/               # 📋 计划中
-│   │   └── ...
-│   ├── scheduler/
-│   │   ├── celery_app.py           # Celery 实例配置
-│   │   ├── tasks.py                # 通用任务定义
-│   │   ├── beats.py                # 📋 定时任务配置
-│   │   └── retry.py                # 📋 重试策略
-│   ├── infrastructure/
-│   │   ├── proxy_pool/             # 📋 代理池管理
-│   │   │   ├── service.py
-│   │   │   ├── providers/
-│   │   │   └── scorer.py
-│   │   ├── account_pool/           # ✅ 账号池服务
-│   │   │   ├── service.py
-│   │   │   ├── models.py
-│   │   │   └── state_machine.py
-│   │   ├── circuit_breaker.py      # ✅ 熔断器封装
-│   │   ├── module_controller.py    # ✅ 模块控制器
-│   │   └── rate_limiter.py         # 📋 限流器
-│   ├── models/
-│   │   ├── mongo/                  # 📋 MongoDB 文档模型
-│   │   ├── pg/                     # ✅ PostgreSQL ORM 模型
-│   │   │   ├── __init__.py
-│   │   │   └── feature_flag.py     # ✅ 功能开关模型
-│   │   └── es/                     # 📋 ES 索引映射
-│   ├── services/
-│   │   ├── task_service.py         # 📋 任务业务逻辑
-│   │   ├── data_service.py         # 📋 数据查询 & 导出
-│   │   ├── feature_flag.py         # ✅ 功能开关服务
-│   │   ├── alerting.py             # 📋 告警服务
-│   │   └── monitoring.py           # 🚧 Prometheus 指标
-│   ├── storage/
-│   │   ├── raw_store.py            # 📋 MongoDB 写入
-│   │   ├── standard_store.py       # 📋 PostgreSQL 写入
-│   │   ├── media_store.py          # 📋 OSS/S3 文件存储
-│   │   └── index_sync.py           # 📋 ES 索引同步
-│   └── utils/
-│       ├── logging.py              # ✅ structlog 配置
-│       ├── fingerprint.py          # 📋 HTTP 指纹工具
-│       └── helpers.py
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── pages/
-│   │   │   ├── Dashboard.tsx       # 📋
-│   │   │   ├── TaskManager.tsx     # 📋
-│   │   │   ├── PlatformExplorer.tsx# 📋
-│   │   │   ├── AccountPool.tsx     # 📋
-│   │   │   ├── DataViewer.tsx      # 📋
-│   │   │   └── FeatureFlags.tsx    # ✅ 功能开关管理页面
-│   │   ├── components/
-│   │   └── services/
-│   │       └── api.ts              # 后端 API 调用
-│   ├── package.json
-│   └── vite.config.ts
-├── docker/                         # 📋 Docker 配置
-│   ├── Dockerfile.backend
-│   ├── Dockerfile.frontend
-│   ├── Dockerfile.celery
-│   └── docker-compose.yml
-├── docs/
-│   ├── architecture/               # ✅ 架构文档
-│   │   ├── README.md
-│   │   └── decisions/              # ✅ ADR 决策记录
-│   ├── platforms/                  # ✅ 平台接入文档
-│   │   └── bilibili.md
-│   └── operations/                 # ✅ 运维指南
-│       └── deployment.md
-├── scripts/
-│   ├── init_db.py                  # 📋 数据库初始化
-│   ├── seed_accounts.py            # 📋 测试账号种子
-│   └── init_feature_flags.py       # 📋 功能开关初始化
-├── tests/
-│   ├── conftest.py                 # ✅ 共享 fixtures
-│   ├── test_adapters/              # ✅ 适配器测试
-│   ├── test_feature_flags.py       # ✅ 功能开关测试
-│   ├── integration/                # 📋 集成测试
-│   └── e2e/                        # 📋 端到端测试
-├── alembic/                        # ✅ 数据库迁移
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions/
-├── .cursorrules                    # ✅ AI 助手配置
-├── .pre-commit-config.yaml         # ✅ Pre-commit hooks
-├── pyproject.toml                  # ✅ 项目配置
-├── alembic.ini                     # ✅ Alembic 配置
-├── .env.example                    # ✅ 环境变量模板
-└── README.md
-```
-
-**图例**: ✅ 已完成  |  🚧 开发中  |  📋 计划中
-
 ## 编码规范
 
 ### Python
@@ -704,8 +582,8 @@ chore: 构建/工具链
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/your-org/superhub.git
-cd superhub
+git clone https://github.com/iiooiioo888/SuperNova.git
+cd SuperNova
 
 # 2. 安装依赖
 poetry install
@@ -714,8 +592,9 @@ poetry install
 cp .env.example .env
 # 编辑 .env 文件，填入数据库密码、API Key 等
 
-# 4. 启动基础设施
-docker-compose up -d postgres mongodb redis elasticsearch
+# 4. 启动基础设施（Docker 配置开发中）
+# docker-compose up -d postgres mongodb redis elasticsearch
+# 目前请手动启动所需服务或使用 scripts/init_db.py 初始化
 
 # 5. 初始化数据库
 python scripts/init_db.py
@@ -868,4 +747,4 @@ MIT License
 
 ---
 
-**SuperHub** — 让社交数据采集更简单、更可靠、更智能 🚀
+**SuperNova** — 让社交数据采集更简单、更可靠、更智能 🚀
