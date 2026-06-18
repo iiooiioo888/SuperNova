@@ -38,15 +38,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """获取数据库会话（别名，兼容 feature_flags 等模块）"""
-    async with async_session_factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+# get_db_session 是 get_db 的别名，保留兼容性
+get_db_session = get_db
 
 
 async def get_redis():
@@ -61,4 +54,9 @@ async def get_redis():
 
 async def get_current_user():
     """获取当前用户（简化版，生产环境应接入 JWT/RBAC）"""
-    return {"id": "admin", "role": "admin"}
+    class _User:
+        def __init__(self):
+            self.id = "admin"
+            self.role = "admin"
+            self.username = "admin"
+    return _User()

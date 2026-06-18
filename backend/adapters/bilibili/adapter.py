@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import structlog
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, AsyncIterator
 
@@ -79,7 +79,7 @@ class BilibiliAdapter(BaseAdapter):
             text="示例视频标题",
             media=[],
             metrics=EngagementMetrics(),
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(UTC),
         )
     
     async def fetch_comments(

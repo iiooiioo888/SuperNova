@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import structlog
 from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from ..config import settings
@@ -45,7 +45,7 @@ class RawStore:
             "data_type": data_type,
             "data_id": data_id,
             "response": response,
-            "collected_at": datetime.utcnow(),
+            "collected_at": datetime.now(UTC),
         }
         
         result = await collection.insert_one(document)

@@ -1,6 +1,6 @@
 """功能開關系統測試"""
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import AsyncMock, MagicMock
 
 from backend.services.feature_flag import FeatureFlagService, FlagScope
@@ -31,6 +31,7 @@ def mock_db_session():
     session.execute = AsyncMock(return_value=result)
     session.add = MagicMock()
     session.commit = AsyncMock()
+    session.flush = AsyncMock()
     session.refresh = AsyncMock()
     
     return session
@@ -105,7 +106,7 @@ async def test_disable_platform(mock_redis, mock_db_session):
     
     # 驗證 DB 操作
     assert mock_db_session.add.called
-    assert mock_db_session.commit.called
+    assert mock_db_session.flush.called
     
     # 驗證 Redis 緩存失效
     assert mock_redis.delete.called
@@ -172,7 +173,7 @@ async def test_get_scheduled_restores(mock_redis, mock_db_session):
     mock_model.id = 1
     mock_model.name = "platform_enabled"
     mock_model.platform = "bilibili"
-    mock_model.restore_at = datetime.utcnow() - timedelta(minutes=1)  # 已到期
+    mock_model.restore_at = datetime.now(UTC) - timedelta(minutes=1)  # 已到期
     
     result = MagicMock()
     result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[mock_model])))

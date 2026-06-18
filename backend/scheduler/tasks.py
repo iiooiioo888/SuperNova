@@ -19,10 +19,16 @@ class AdapterTask(Task):
 
 
 @celery_app.task(base=AdapterTask, bind=True)
-async def fetch_posts_task(self, platform: str, target: str, limit: int = 50):
+def fetch_posts_task(self, platform: str, target: str, limit: int = 50):
     """获取帖子任务"""
+    import asyncio
     logger.info("task.fetch_posts", platform=platform, target=target)
     
+    return asyncio.run(_fetch_posts(platform, target, limit))
+
+
+async def _fetch_posts(platform: str, target: str, limit: int):
+    """异步实现：获取帖子"""
     try:
         # 获取账号
         lease = await account_pool_service.acquire(platform, "fetch_posts")
@@ -46,16 +52,24 @@ async def fetch_posts_task(self, platform: str, target: str, limit: int = 50):
     
     except Exception as e:
         # 报告失败
-        if 'lease' in locals():
+        try:
             await account_pool_service.report_failure(lease, str(type(e)))
+        except NameError:
+            pass
         raise
 
 
 @celery_app.task(base=AdapterTask, bind=True)
-async def fetch_user_profile_task(self, platform: str, user_id: str):
+def fetch_user_profile_task(self, platform: str, user_id: str):
     """获取用户资料任务"""
+    import asyncio
     logger.info("task.fetch_user_profile", platform=platform, user_id=user_id)
     
+    return asyncio.run(_fetch_user_profile(platform, user_id))
+
+
+async def _fetch_user_profile(platform: str, user_id: str):
+    """异步实现：获取用户资料"""
     adapter = get_adapter(platform)
     await adapter.setup()
     

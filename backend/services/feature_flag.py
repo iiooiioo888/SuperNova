@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import structlog
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Any
 from enum import Enum
 from pydantic import BaseModel, Field
@@ -202,7 +202,7 @@ class FeatureFlagService:
                 )
                 self._db.add(audit_log)
         
-        await self._db.commit()
+        await self._db.flush()
         await self._db.refresh(model)
         
         # 使 Redis 緩存失效
@@ -233,7 +233,7 @@ class FeatureFlagService:
         """
         restore_at = None
         if auto_restore_minutes:
-            restore_at = datetime.utcnow() + timedelta(minutes=auto_restore_minutes)
+            restore_at = datetime.now(UTC) + timedelta(minutes=auto_restore_minutes)
         
         # 禁用平台級開關
         await self.set_flag(
@@ -310,7 +310,7 @@ class FeatureFlagService:
     
     async def get_scheduled_restores(self) -> list[dict[str, Any]]:
         """獲取待恢復的平台列表"""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         query = select(FeatureFlagModel).where(
             FeatureFlagModel.enabled == False,
             FeatureFlagModel.restore_at != None,

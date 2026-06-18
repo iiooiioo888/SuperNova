@@ -54,12 +54,19 @@ circuit_breaker_manager = CircuitBreakerManager()
 
 
 def platform_circuit(platform: str, fail_max: int = 15, reset_timeout: int = 300):
-    """平台熔断器装饰器"""
+    """平台熔断器装饰器（支持 sync 和 async 函数）"""
+    import asyncio
     breaker = circuit_breaker_manager.get_breaker(platform, fail_max, reset_timeout)
     
     def decorator(func):
-        @breaker
-        async def wrapper(*args, **kwargs):
-            return await func(*args, **kwargs)
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            @breaker
+            async def async_wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+            return async_wrapper
+        else:
+            @breaker
+            def sync_wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return sync_wrapper
     return decorator

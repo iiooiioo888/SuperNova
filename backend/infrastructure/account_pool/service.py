@@ -4,7 +4,7 @@ from __future__ import annotations
 import structlog
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Any
 
@@ -42,7 +42,7 @@ class AccountLease:
         if timeout_seconds is None:
             timeout_seconds = settings.lease_timeout_seconds
         
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         return cls(
             lease_id=str(uuid.uuid4()),
             platform=platform,
@@ -54,7 +54,7 @@ class AccountLease:
     
     def is_expired(self) -> bool:
         """检查租约是否过期"""
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
 
 @dataclass
@@ -74,7 +74,7 @@ class Account:
         if self.state == AccountState.BANNED:
             return False
         if self.state == AccountState.COOLDOWN:
-            if self.cooldown_until and datetime.utcnow() < self.cooldown_until:
+            if self.cooldown_until and datetime.now(UTC) < self.cooldown_until:
                 return False
             # 冷却时间已过，恢复为 active
             self.state = AccountState.ACTIVE
@@ -84,7 +84,7 @@ class Account:
     def mark_success(self) -> None:
         """标记成功使用"""
         self.failure_count = 0
-        self.last_used_at = datetime.utcnow()
+        self.last_used_at = datetime.now(UTC)
         # 轻微提升权重
         self.weight = min(1.0, self.weight + 0.01)
     
@@ -96,14 +96,14 @@ class Account:
             cooldown_seconds = settings.account_cooldown_seconds
         
         self.failure_count += 1
-        self.last_used_at = datetime.utcnow()
+        self.last_used_at = datetime.now(UTC)
         
         if self.failure_count >= max_failures:
             self.state = AccountState.BANNED
             logger.warning("account.banned", account_id=self.account_id, platform=self.platform)
         else:
             self.state = AccountState.COOLDOWN
-            self.cooldown_until = datetime.utcnow() + timedelta(seconds=cooldown_seconds)
+            self.cooldown_until = datetime.now(UTC) + timedelta(seconds=cooldown_seconds)
             logger.info("account.cooldown", account_id=self.account_id, platform=self.platform)
         
         # 降低权重
@@ -146,7 +146,7 @@ class AccountPoolService:
         )
         
         self._leases[lease.lease_id] = lease
-        account.last_used_at = datetime.utcnow()
+        account.last_used_at = datetime.now(UTC)
         
         logger.info("account_pool.leased", lease_id=lease.lease_id, account_id=account.account_id)
         return lease

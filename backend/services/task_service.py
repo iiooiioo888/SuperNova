@@ -1,7 +1,7 @@
 """任务服务 — 任务 CRUD、队列管理、历史归档"""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 import structlog
@@ -132,19 +132,20 @@ class TaskService:
         total = total_result.scalar() or 0
 
         # 按优先级排序：urgent > high > normal > low，然后按创建时间
-        priority_order = {
-            TaskPriority.URGENT.value: 0,
-            TaskPriority.HIGH.value: 1,
-            TaskPriority.NORMAL.value: 2,
-            TaskPriority.LOW.value: 3,
-        }
-        query = query.order_by(TaskModel.created_at)
+        # 在 SQL 层排序，确保分页结果正确
+        from sqlalchemy import case
+        priority_order = case(
+            (TaskModel.priority == TaskPriority.URGENT.value, 0),
+            (TaskModel.priority == TaskPriority.HIGH.value, 1),
+            (TaskModel.priority == TaskPriority.NORMAL.value, 2),
+            (TaskModel.priority == TaskPriority.LOW.value, 3),
+            else_=2,
+        )
+        query = query.order_by(priority_order, TaskModel.created_at)
         query = query.offset((page - 1) * page_size).limit(page_size)
 
         result = await db.execute(query)
         tasks = list(result.scalars().all())
-        # 在 Python 层按优先级排序（因为 ENUM 排序不方便）
-        tasks.sort(key=lambda t: priority_order.get(t.priority, 2))
 
         return tasks, total
 
@@ -205,7 +206,7 @@ class TaskService:
             return None
 
         task.status = status
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         if status == TaskStatus.RUNNING.value:
             task.started_at = now
@@ -288,7 +289,7 @@ class TaskService:
         older_than_hours: int = 24,
     ) -> int:
         """将已完成的任务归档到历史表"""
-        cutoff = datetime.utcnow() - timedelta(hours=older_than_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=older_than_hours)
         completed_statuses = [
             TaskStatus.SUCCESS.value,
             TaskStatus.FAILED.value,
@@ -339,7 +340,7 @@ class TaskService:
 
     async def get_statistics(self, db: AsyncSession) -> dict:
         """获取任务统计概览"""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         # 各状态任务数

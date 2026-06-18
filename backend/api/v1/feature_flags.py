@@ -7,17 +7,23 @@ from datetime import datetime
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.v1.deps import get_redis, get_db_session, get_current_user
+from backend.api.v1.deps import get_redis, get_db, get_current_user
 from backend.services.feature_flag import (
     FeatureFlagService,
     FlagScope,
     FeatureFlagCreate,
     FeatureFlagUpdate,
-    get_feature_flag_service,
 )
-from backend.models.pg.auth import User  # 假設有用戶模型
 
 router = APIRouter(prefix="/feature-flags", tags=["Feature Flags"])
+
+
+async def get_feature_flag_service(
+    redis=Depends(get_redis),
+    db: AsyncSession = Depends(get_db),
+) -> FeatureFlagService:
+    """依赖注入：获取 FeatureFlagService 实例"""
+    return FeatureFlagService(redis=redis, db_session=db)
 
 
 @router.get("/list")
@@ -52,7 +58,7 @@ async def get_feature_flag(
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 async def create_feature_flag(
     payload: FeatureFlagCreate,
-    current_user: User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
     service: FeatureFlagService = Depends(get_feature_flag_service),
 ) -> dict[str, Any]:
     """創建新的功能開關
@@ -92,7 +98,7 @@ async def update_feature_flag(
     name: str,
     payload: FeatureFlagUpdate,
     platform: str | None = Query(None, description="平台标识"),
-    current_user: User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
     service: FeatureFlagService = Depends(get_feature_flag_service),
 ) -> dict[str, Any]:
     """更新功能開關狀態
@@ -135,7 +141,7 @@ async def disable_platform(
     platform: str,
     reason: str = Query(..., description="禁用原因"),
     auto_restore_minutes: int | None = Query(None, description="自動恢復時間（分鐘）"),
-    current_user: User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
     service: FeatureFlagService = Depends(get_feature_flag_service),
 ) -> dict[str, Any]:
     """緊急禁用整個平台
@@ -169,7 +175,7 @@ async def disable_platform(
 async def enable_platform(
     platform: str,
     reason: str = Query(..., description="啟用原因"),
-    current_user: User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
     service: FeatureFlagService = Depends(get_feature_flag_service),
 ) -> dict[str, Any]:
     """啟用平台"""

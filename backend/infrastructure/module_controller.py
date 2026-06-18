@@ -69,7 +69,7 @@ class ModuleController:
         service = cls._get_service()
         
         # 1. 檢查全局開關
-        global_enabled = await service.is_enabled("all_enabled", scope=FlagScope.GLOBAL)
+        global_enabled = await service.is_enabled("all_enabled")
         if not global_enabled:
             logger.warning(
                 "task.skipped.global_disabled",

@@ -49,5 +49,8 @@ async def acquire_account(platform: str, task_type: str = Body(default="default"
 @router.post("/{platform}/release")
 async def release_account(platform: str, lease_id: str = Body(...)):
     """释放账号租约"""
-    # TODO: 需要根据 lease_id 找到对应的租约
-    return {"status": "ok"}
+    lease = account_pool_service._leases.get(lease_id)
+    if not lease or lease.platform != platform:
+        raise HTTPException(status_code=404, detail="Lease not found")
+    await account_pool_service.release(lease)
+    return {"status": "ok", "lease_id": lease_id}

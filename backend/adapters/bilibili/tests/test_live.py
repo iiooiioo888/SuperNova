@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import pytest
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from backend.adapters.bilibili.adapter import BilibiliAdapter
 from backend.adapters.base import FetchParams, UnifiedDanmaku, UnifiedLiveStream
@@ -106,7 +106,7 @@ class TestDanmaku:
             author_id="987654321",
             author_name="观众 A",
             text="主播好！",
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             color="#FFFFFF",
             is_gift=False,
             badge_level=10,

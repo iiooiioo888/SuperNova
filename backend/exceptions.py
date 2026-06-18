@@ -24,10 +24,6 @@ class RateLimitError(AdapterError):
         super().__init__(f"Rate limit exceeded. Retry after: {retry_after}s")
 
 
-class CapabilityNotSupported(AdapterError):
-    """调用不支持的能力"""
-    pass
-
 
 class AccountPoolError(SuperHubError):
     """账号池错误"""
