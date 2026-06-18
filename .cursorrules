@@ -1,0 +1,72 @@
+# SuperHub 项目 AI 助手指南
+
+## 项目概述
+
+SuperHub 是一个多平台社交数据采集系统，采用 Python 异步架构，支持插件化接入新平台。
+
+## 核心指令
+
+### 代码生成
+
+1. **适配器开发**: 使用 `backend/adapters/bilibili/adapter.py` 作为模板
+2. **数据模型**: 遵循 `backend/adapters/base.py` 中的统一模型
+3. **异常处理**: 使用 `backend/exceptions.py` 中定义的异常类
+4. **配置管理**: 通过 Pydantic Settings 管理，参考 `backend/config.py`
+
+### 测试编写
+
+1. 单元测试放在对应模块的 `tests/` 目录
+2. Mock 测试优先，使用 respx mock HTTP 请求
+3. fixtures 目录存放脱敏的 API 响应样本
+4. 集成测试标记为 `@pytest.mark.integration`
+
+### 文档生成
+
+1. 平台接入文档放在 `docs/platforms/{platform}.md`
+2. ADR 文档放在 `docs/architecture/decisions/ADR-XXX-title.md`
+3. API 文档通过 FastAPI 自动生成（/docs）
+
+## 技术栈
+
+- **后端**: FastAPI + Python 3.11+ + asyncio
+- **任务队列**: Celery + Redis
+- **数据库**: MongoDB (Motor) + PostgreSQL (SQLAlchemy async)
+- **HTTP 客户端**: curl_cffi / httpx
+- **日志**: structlog
+
+## 编码规范
+
+- 类型注解全覆盖
+- 异步优先，所有 I/O 使用 async/await
+- 日志使用 structlog，不用 print
+- 自定义异常体系，不裸 except
+- 提交信息遵循 Conventional Commits
+
+## MCP Servers 配置
+
+本项目配置了以下 MCP Servers：
+
+### 数据库
+- postgres: DATABASE_URL=postgresql+asyncpg://superhub:secret@localhost:5432/superhub
+- mongodb: MONGODB_URI=mongodb://localhost:27017/superhub
+- redis: REDIS_URL=redis://localhost:6379/0
+
+### 工具
+- filesystem: 允许读写项目文件
+- git: 查看 commit 历史、diff
+- brave-search: 搜索 API 文档和反爬策略
+- puppeteer: 浏览器自动化调试
+
+## 开发优先级
+
+Phase 1 (当前): B 站适配器完整链路
+Phase 2: 调度与容错
+Phase 3: 扩展平台（Telegram）
+Phase 4: 前端与运维
+
+## 关键约束
+
+1. 不要过早抽象 - 等第三个适配器出现再提取共性
+2. Mock 测试优先 - 每个适配器必须有 fixtures
+3. 配置驱动 - 所有阈值可配置，不硬编码
+4. 日志即监控 - 每条日志含 platform、task_id、account_id
