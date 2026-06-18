@@ -335,14 +335,3 @@ class FeatureFlagService:
             return f"{self.REDIS_PREFIX}:{platform}:{name}"
         return f"{self.REDIS_PREFIX}:global:{name}"
 
-
-# 全局實例（通過依賴注入獲取）
-_feature_flag_service: FeatureFlagService | None = None
-
-
-def get_feature_flag_service(redis: Redis, db_session: AsyncSession) -> FeatureFlagService:
-    """獲取服務實例"""
-    global _feature_flag_service
-    if _feature_flag_service is None:
-        _feature_flag_service = FeatureFlagService(redis, db_session)
-    return _feature_flag_service

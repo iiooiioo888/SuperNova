@@ -8,6 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .api.v1 import tasks, platforms, accounts, data, health, dashboard, feature_flags
 from .adapters import bilibili  # 注册适配器
+from .api.v1.deps import engine
+from .middleware.logging import RequestLoggingMiddleware
+from .middleware.rate_limit import RateLimitMiddleware
 
 logger = structlog.get_logger()
 
@@ -22,7 +25,10 @@ async def lifespan(app: FastAPI):
     
     yield
     
+    # 清理资源
     logger.info("app.shutdown", name=settings.app_name)
+    await engine.dispose()
+    logger.info("app.db_pool_disposed")
 
 
 def create_app() -> FastAPI:
@@ -34,6 +40,11 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+    
+    # 限流中间件（每分钟 100 次请求）
+    app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
+    # 请求日志中间件
+    app.add_middleware(RequestLoggingMiddleware)
     
     # CORS 配置
     app.add_middleware(

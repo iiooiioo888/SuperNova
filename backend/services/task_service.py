@@ -339,74 +339,57 @@ class TaskService:
     # ── 统计 ────────────────────────────────────────────
 
     async def get_statistics(self, db: AsyncSession) -> dict:
-        """获取任务统计概览"""
+        """获取任务统计概览（优化：8 次查询 → 2 次）"""
         now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # 各状态任务数
-        status_counts = {}
-        for status in TaskStatus:
-            result = await db.execute(
-                select(func.count(TaskModel.id)).where(TaskModel.status == status.value)
-            )
-            status_counts[status.value] = result.scalar() or 0
+        from sqlalchemy import case as sa_case
 
-        # 今日任务数
-        today_total_result = await db.execute(
-            select(func.count(TaskModel.id)).where(TaskModel.created_at >= today_start)
+        # ── 第 1 次查询：各状态×平台 聚合
+        agg_result = await db.execute(
+            select(
+                TaskModel.status,
+                TaskModel.platform,
+                func.count(TaskModel.id).label("cnt"),
+            ).group_by(TaskModel.status, TaskModel.platform)
         )
-        today_total = today_total_result.scalar() or 0
+        rows = agg_result.all()
 
-        # 今日成功数
-        today_success_result = await db.execute(
-            select(func.count(TaskModel.id)).where(
-                and_(
-                    TaskModel.created_at >= today_start,
-                    TaskModel.status == TaskStatus.SUCCESS.value,
-                )
-            )
+        status_counts: dict[str, int] = {}
+        platform_counts: dict[str, int] = {}
+        running_by_platform: dict[str, int] = {}
+
+        for status_val, platform_val, cnt in rows:
+            status_counts[status_val] = status_counts.get(status_val, 0) + cnt
+            platform_counts[platform_val] = platform_counts.get(platform_val, 0) + cnt
+            if status_val == TaskStatus.RUNNING.value:
+                running_by_platform[platform_val] = cnt
+
+        # ── 第 2 次查询：今日汇总（一次聚合）
+        today_result = await db.execute(
+            select(
+                func.count(TaskModel.id).label("total"),
+                func.count(
+                    sa_case((TaskModel.status == TaskStatus.SUCCESS.value, 1))
+                ).label("success"),
+                func.coalesce(func.sum(
+                    sa_case(
+                        (TaskModel.status == TaskStatus.SUCCESS.value, TaskModel.result_count),
+                        else_=0,
+                    )
+                ), 0).label("items"),
+                func.coalesce(func.avg(
+                    sa_case((TaskModel.status == TaskStatus.SUCCESS.value, TaskModel.duration_seconds))
+                ), 0).label("avg_dur"),
+            ).where(TaskModel.created_at >= today_start)
         )
-        today_success = today_success_result.scalar() or 0
+        tr = today_result.one()
 
-        # 今日采集数据总量
-        today_items_result = await db.execute(
-            select(func.coalesce(func.sum(TaskModel.result_count), 0)).where(
-                and_(
-                    TaskModel.created_at >= today_start,
-                    TaskModel.status == TaskStatus.SUCCESS.value,
-                )
-            )
-        )
-        today_items = today_items_result.scalar() or 0
+        today_total = tr.total or 0
+        today_success = tr.success or 0
+        today_items = int(tr.items or 0)
+        avg_duration = round(float(tr.avg_dur or 0), 2)
 
-        # 各平台任务数
-        platform_result = await db.execute(
-            select(TaskModel.platform, func.count(TaskModel.id))
-            .group_by(TaskModel.platform)
-        )
-        platform_counts = dict(platform_result.all())
-
-        # 各平台运行中的任务
-        running_result = await db.execute(
-            select(TaskModel.platform, func.count(TaskModel.id))
-            .where(TaskModel.status == TaskStatus.RUNNING.value)
-            .group_by(TaskModel.platform)
-        )
-        running_by_platform = dict(running_result.all())
-
-        # 平均任务耗时（今日成功的）
-        avg_duration_result = await db.execute(
-            select(func.coalesce(func.avg(TaskModel.duration_seconds), 0)).where(
-                and_(
-                    TaskModel.created_at >= today_start,
-                    TaskModel.status == TaskStatus.SUCCESS.value,
-                    TaskModel.duration_seconds.isnot(None),
-                )
-            )
-        )
-        avg_duration = round(float(avg_duration_result.scalar() or 0), 2)
-
-        # 排队中任务数
         queue_count = (
             status_counts.get(TaskStatus.PENDING.value, 0)
             + status_counts.get(TaskStatus.QUEUED.value, 0)
@@ -419,9 +402,7 @@ class TaskService:
             "running_count": status_counts.get(TaskStatus.RUNNING.value, 0),
             "today_total": today_total,
             "today_success": today_success,
-            "today_success_rate": round(
-                today_success / today_total * 100, 1
-            ) if today_total > 0 else 0,
+            "today_success_rate": round(today_success / today_total * 100, 1) if today_total > 0 else 0,
             "today_items_collected": today_items,
             "avg_duration_seconds": avg_duration,
             "platform_counts": platform_counts,
