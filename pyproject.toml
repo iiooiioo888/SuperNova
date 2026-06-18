@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "superhub"
+version = "0.1.0"
+description = "统一社交数据采集平台"
+authors = ["SuperHub Team"]
+readme = "README.md"
+packages = [{include = "backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.109.0"
+uvicorn = {extras = ["standard"], version = "^0.27.0"}
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+httpx = "^0.26.0"
+curl_cffi = "^0.6.0"
+motor = "^3.3.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.25"}
+asyncpg = "^0.29.0"
+elasticsearch = {extras = ["async"], version = "^8.11.0"}
+minio = "^7.2.0"
+celery = {extras = ["redis"], version = "^5.3.0"}
+redis = "^5.0.0"
+pybreaker = "^1.0.0"
+structlog = "^24.1.0"
+prometheus-client = "^0.19.0"
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+respx = "^0.20.0"
+python-multipart = "^0.0.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests", "backend/adapters/*/tests"]
