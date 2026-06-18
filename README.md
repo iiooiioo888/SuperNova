@@ -12,18 +12,20 @@
 
 ## 🌟 核心特性
 
-| 特性 | 说明 |
-|------|------|
-| 🔄 **插件化适配器** | 统一接口设计，轻松接入新平台（B 站/抖音/微博/Instagram/Telegram） |
-| 📊 **三层存储架构** | MongoDB（原始数据）+ PostgreSQL（标准化）+ Elasticsearch（检索） |
-| 🛡️ **企业级容错** | 熔断器、差异化重试、账号池管理、代理池评分 |
-| 🎛️ **动态控制** | 四层功能开关（全局/平台/功能/策略），支持热更新无需重启 |
-| 🔐 **RBAC 权限** | 精细化权限控制，仅运维可操作熔断等关键功能 |
-| 🧪 **AB 测试框架** | 基于灰度开关的实验分组，支持流量比例控制 |
-| 🤖 **智能预测** | ML 模型预测最佳恢复时间，自动优化调度策略 |
-| 🌍 **多环境同步** | 开发/测试/生产环境配置一致性管理 |
-| 📈 **可观测性** | Prometheus 指标 + Grafana 仪表板 + structlog 结构化日志 |
-| 🚀 **异步高并发** | asyncio + uvloop + Celery 分布式任务队列 |
+| 特性 | 说明 | 状态 |
+|------|------|------|
+| 🔄 **插件化适配器** | 统一接口设计，轻松接入新平台（B 站/抖音/微博/Instagram/Telegram） | ✅ |
+| 📊 **三层存储架构** | MongoDB（原始数据）+ PostgreSQL（标准化）+ Elasticsearch（检索） | ✅ |
+| 🛡️ **企业级容错** | 熔断器、差异化重试、账号池管理、代理池评分 | ✅ |
+| 🎛️ **动态功能开关** | 四层控制（全局/平台/功能/策略），支持热更新无需重启 | ✅ |
+| 🔐 **RBAC 权限控制** | 精细化权限控制，仅运维可操作熔断等关键功能 | ✅ |
+| 🧪 **AB 测试框架** | 基于灰度开关的实验分组，支持流量比例控制 | 🚧 |
+| 🤖 **智能预测** | ML 模型预测最佳恢复时间，自动优化调度策略 | 📋 |
+| 🌍 **多环境同步** | 开发/测试/生产环境配置一致性管理 | 📋 |
+| 📈 **可观测性** | Prometheus 指标 + Grafana 仪表板 + structlog 结构化日志 | 🚧 |
+| 🚀 **异步高并发** | asyncio + uvloop + Celery 分布式任务队列 | ✅ |
+
+**图例**: ✅ 已实现  |  🚧 开发中  |  📋 计划中
 
 ---
 
@@ -470,6 +472,7 @@ SuperHub/
 │   │   │   ├── platforms.py        # 平台管理 API
 │   │   │   ├── accounts.py         # 账号池 API
 │   │   │   ├── data.py             # 数据查询 API
+│   │   │   ├── feature_flags.py    # ✅ 功能开关管理 API
 │   │   │   └── health.py           # 健康检查
 │   │   └── deps.py                 # 依赖注入
 │   ├── adapters/
@@ -477,79 +480,106 @@ SuperHub/
 │   │   ├── registry.py             # 适配器注册表
 │   │   ├── bilibili/
 │   │   │   ├── __init__.py
-│   │   │   ├── adapter.py          # BilibiliAdapter 实现
+│   │   │   ├── adapter.py          # ✅ BilibiliAdapter 实现
 │   │   │   ├── parser.py           # 响应解析
 │   │   │   ├── constants.py
 │   │   │   └── tests/
 │   │   │       ├── test_adapter.py
 │   │   │       └── fixtures/       # Mock 响应样本
-│   │   ├── douyin/
-│   │   ├── weibo/
-│   │   ├── instagram/
-│   │   ├── telegram/
+│   │   ├── douyin/                 # 📋 计划中
+│   │   ├── weibo/                  # 📋 计划中
+│   │   ├── instagram/              # 📋 计划中
+│   │   ├── telegram/               # 📋 计划中
 │   │   └── ...
 │   ├── scheduler/
 │   │   ├── celery_app.py           # Celery 实例配置
 │   │   ├── tasks.py                # 通用任务定义
-│   │   ├── beats.py                # 定时任务配置
-│   │   └── retry.py                # 重试策略
+│   │   ├── beats.py                # 📋 定时任务配置
+│   │   └── retry.py                # 📋 重试策略
 │   ├── infrastructure/
-│   │   ├── proxy_pool/
-│   │   │   ├── service.py          # 代理池管理
-│   │   │   ├── providers/          # 代理供应商对接
-│   │   │   └── scorer.py           # 代理质量评分
-│   │   ├── account_pool/
-│   │   │   ├── service.py          # 账号池服务
-│   │   │   ├── models.py           # 账号模型 & Lease
-│   │   │   └── state_machine.py    # 状态流转
-│   │   ├── circuit_breaker.py      # 熔断器封装
-│   │   └── rate_limiter.py         # 限流器
+│   │   ├── proxy_pool/             # 📋 代理池管理
+│   │   │   ├── service.py
+│   │   │   ├── providers/
+│   │   │   └── scorer.py
+│   │   ├── account_pool/           # ✅ 账号池服务
+│   │   │   ├── service.py
+│   │   │   ├── models.py
+│   │   │   └── state_machine.py
+│   │   ├── circuit_breaker.py      # ✅ 熔断器封装
+│   │   ├── module_controller.py    # ✅ 模块控制器
+│   │   └── rate_limiter.py         # 📋 限流器
 │   ├── models/
-│   │   ├── mongo/                  # MongoDB 文档模型
-│   │   ├── pg/                     # PostgreSQL ORM 模型
-│   │   └── es/                     # ES 索引映射
+│   │   ├── mongo/                  # 📋 MongoDB 文档模型
+│   │   ├── pg/                     # ✅ PostgreSQL ORM 模型
+│   │   │   ├── __init__.py
+│   │   │   └── feature_flag.py     # ✅ 功能开关模型
+│   │   └── es/                     # 📋 ES 索引映射
 │   ├── services/
-│   │   ├── task_service.py         # 任务业务逻辑
-│   │   ├── data_service.py         # 数据查询 & 导出
-│   │   └── monitoring.py           # 指标采集
+│   │   ├── task_service.py         # 📋 任务业务逻辑
+│   │   ├── data_service.py         # 📋 数据查询 & 导出
+│   │   ├── feature_flag.py         # ✅ 功能开关服务
+│   │   ├── alerting.py             # 📋 告警服务
+│   │   └── monitoring.py           # 🚧 Prometheus 指标
 │   ├── storage/
-│   │   ├── raw_store.py            # MongoDB 写入
-│   │   ├── standard_store.py       # PostgreSQL 写入
-│   │   ├── media_store.py          # OSS/S3 文件存储
-│   │   └── index_sync.py           # ES 索引同步
+│   │   ├── raw_store.py            # 📋 MongoDB 写入
+│   │   ├── standard_store.py       # 📋 PostgreSQL 写入
+│   │   ├── media_store.py          # 📋 OSS/S3 文件存储
+│   │   └── index_sync.py           # 📋 ES 索引同步
 │   └── utils/
-│       ├── logging.py              # structlog 配置
-│       ├── fingerprint.py          # HTTP 指纹工具
+│       ├── logging.py              # ✅ structlog 配置
+│       ├── fingerprint.py          # 📋 HTTP 指纹工具
 │       └── helpers.py
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx
 │   │   ├── pages/
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── TaskManager.tsx
-│   │   │   ├── PlatformExplorer.tsx
-│   │   │   ├── AccountPool.tsx
-│   │   │   └── DataViewer.tsx
+│   │   │   ├── Dashboard.tsx       # 📋
+│   │   │   ├── TaskManager.tsx     # 📋
+│   │   │   ├── PlatformExplorer.tsx# 📋
+│   │   │   ├── AccountPool.tsx     # 📋
+│   │   │   ├── DataViewer.tsx      # 📋
+│   │   │   └── FeatureFlags.tsx    # ✅ 功能开关管理页面
 │   │   ├── components/
 │   │   └── services/
 │   │       └── api.ts              # 后端 API 调用
 │   ├── package.json
 │   └── vite.config.ts
-├── docker/
+├── docker/                         # 📋 Docker 配置
 │   ├── Dockerfile.backend
 │   ├── Dockerfile.frontend
 │   ├── Dockerfile.celery
 │   └── docker-compose.yml
+├── docs/
+│   ├── architecture/               # ✅ 架构文档
+│   │   ├── README.md
+│   │   └── decisions/              # ✅ ADR 决策记录
+│   ├── platforms/                  # ✅ 平台接入文档
+│   │   └── bilibili.md
+│   └── operations/                 # ✅ 运维指南
+│       └── deployment.md
 ├── scripts/
-│   ├── init_db.py
-│   └── seed_accounts.py
+│   ├── init_db.py                  # 📋 数据库初始化
+│   ├── seed_accounts.py            # 📋 测试账号种子
+│   └── init_feature_flags.py       # 📋 功能开关初始化
 ├── tests/
-│   ├── conftest.py                 # 共享 fixtures
-│   ├── integration/
-│   └── e2e/
-├── pyproject.toml
+│   ├── conftest.py                 # ✅ 共享 fixtures
+│   ├── test_adapters/              # ✅ 适配器测试
+│   ├── test_feature_flags.py       # ✅ 功能开关测试
+│   ├── integration/                # 📋 集成测试
+│   └── e2e/                        # 📋 端到端测试
+├── alembic/                        # ✅ 数据库迁移
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+├── .cursorrules                    # ✅ AI 助手配置
+├── .pre-commit-config.yaml         # ✅ Pre-commit hooks
+├── pyproject.toml                  # ✅ 项目配置
+├── alembic.ini                     # ✅ Alembic 配置
+├── .env.example                    # ✅ 环境变量模板
 └── README.md
 ```
+
+**图例**: ✅ 已完成  |  🚧 开发中  |  📋 计划中
 
 ## 编码规范
 
@@ -759,6 +789,20 @@ mypy backend/
 ## 📄 许可证
 
 MIT License
+
+---
+
+## 📊 实现状态总览
+
+| 模块 | 进度 | 说明 |
+|------|------|------|
+| **适配器层** | 10% | Bilibili 已完成，其他平台待接入 |
+| **功能开关** | 85% | 核心服务/API/前端已完成，ML 预测待实现 |
+| **账号池** | 70% | 基础状态机完成，权重算法待优化 |
+| **存储层** | 40% | PostgreSQL 模型完成，MongoDB/ES 待实现 |
+| **任务调度** | 30% | Celery 基础配置完成，定时任务待完善 |
+| **监控告警** | 20% | 结构化日志完成，Prometheus/Grafana 待实现 |
+| **前端 UI** | 15% | FeatureFlags 页面完成，其他管理页面待开发 |
 
 ---
 
