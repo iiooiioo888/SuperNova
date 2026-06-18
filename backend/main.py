@@ -7,10 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .api.v1 import tasks, platforms, accounts, data, health, dashboard, feature_flags
+from .api.exception_handlers import register_exception_handlers
 from .adapters import bilibili  # 注册适配器
 from .api.v1.deps import engine
 from .middleware.logging import RequestLoggingMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
+from .middleware.security import SecurityHeadersMiddleware
 
 logger = structlog.get_logger()
 
@@ -25,10 +27,18 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    # 清理资源
-    logger.info("app.shutdown", name=settings.app_name)
+    # 优雅关闭：等待进行中的请求完成
+    logger.info("app.shutdown.begin", name=settings.app_name)
+    
+    # 关闭适配器
+    try:
+        await bilibili.BilibiliAdapter().teardown()
+    except Exception as e:
+        logger.warning("app.adapter_teardown_error", error=str(e))
+    
+    # 关闭数据库连接池
     await engine.dispose()
-    logger.info("app.db_pool_disposed")
+    logger.info("app.shutdown.complete")
 
 
 def create_app() -> FastAPI:
@@ -36,11 +46,42 @@ def create_app() -> FastAPI:
     
     app = FastAPI(
         title=settings.app_name,
-        description="统一社交数据采集平台",
-        version="0.1.0",
+        description="""## 统一社交数据采集平台
+
+企业级多平台社交数据采集系统，支持：
+- **多平台适配器**：B站、抖音、微博、Instagram、Telegram
+- **三层存储架构**：MongoDB（原始）+ PostgreSQL（标准化）+ Elasticsearch（检索）
+- **企业级容错**：熔断器、差异化重试、账号池管理、代理池评分
+- **动态功能开关**：四层控制（全局/平台/功能/策略），支持热更新
+- **RBAC 权限控制**：精细化权限控制
+
+### 认证
+所有 API 需要通过 `Authorization: Bearer <token>` 认证（开发环境可关闭）。
+
+### 限流
+- 默认：100 请求/分钟/IP
+- 健康检查接口不限流
+""",
+        version="0.2.0",
         lifespan=lifespan,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_tags=[
+            {"name": "tasks", "description": "任务管理 — 创建、查询、取消、重试采集任务"},
+            {"name": "platforms", "description": "平台管理 — 查看已接入平台及能力"},
+            {"name": "accounts", "description": "账号池 — 管理采集账号的租约和状态"},
+            {"name": "data", "description": "数据查询 — 查询已采集的帖子、用户、评论数据"},
+            {"name": "health", "description": "健康检查 — 服务就绪和组件状态检测"},
+            {"name": "dashboard", "description": "仪表板 — 系统统计概览"},
+            {"name": "feature-flags", "description": "功能开关 — 动态控制功能启停和灰度发布"},
+        ],
     )
     
+    # 注册全局异常处理器
+    register_exception_handlers(app)
+    
+    # 安全 headers
+    app.add_middleware(SecurityHeadersMiddleware)
     # 限流中间件（每分钟 100 次请求）
     app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
     # 请求日志中间件

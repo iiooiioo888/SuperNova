@@ -209,6 +209,34 @@ class AccountPoolService:
             credentials=credentials,
         )
         logger.info("account_pool.added", platform=platform, account_id=account_id)
+    
+    async def cleanup_expired_leases(self) -> int:
+        """清理过期租约（应定期调用）"""
+        now = datetime.now(UTC)
+        expired = [
+            lid for lid, lease in self._leases.items()
+            if lease.is_expired()
+        ]
+        for lid in expired:
+            del self._leases[lid]
+        if expired:
+            logger.info("account_pool.leases_cleaned", count=len(expired))
+        return len(expired)
+    
+    async def list_accounts(self, platform: str | None = None) -> list[dict[str, Any]]:
+        """列出账号（调试用）"""
+        result = []
+        platforms = [platform] if platform else list(self._accounts.keys())
+        for p in platforms:
+            for acc in self._accounts.get(p, {}).values():
+                result.append({
+                    "account_id": acc.account_id,
+                    "platform": acc.platform,
+                    "state": acc.state.value,
+                    "weight": acc.weight,
+                    "failure_count": acc.failure_count,
+                })
+        return result
 
 
 # 全局单例

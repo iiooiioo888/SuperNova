@@ -15,12 +15,14 @@ class TokenBucketRateLimiter:
     """令牌桶限流器
     
     每个平台独立限流，支持动态调整速率。
+    自动清理过期 IP 防止内存泄漏。
     """
 
     def __init__(
         self,
         rate: float = 10.0,  # 每秒产生的令牌数
         capacity: int = 20,  # 桶容量
+        cleanup_interval: float = 300.0,  # 清理间隔（秒）
     ):
         self._rate = rate
         self._capacity = capacity
@@ -28,6 +30,23 @@ class TokenBucketRateLimiter:
             lambda: {"tokens": capacity, "last_refill": time.monotonic()}
         )
         self._lock = asyncio.Lock()
+        self._cleanup_interval = cleanup_interval
+        self._last_cleanup = time.monotonic()
+
+    async def _maybe_cleanup(self) -> None:
+        """定期清理过期桶（超过 10 分钟未使用）"""
+        now = time.monotonic()
+        if now - self._last_cleanup < self._cleanup_interval:
+            return
+        self._last_cleanup = now
+        stale_keys = [
+            key for key, bucket in self._buckets.items()
+            if now - bucket["last_refill"] > 600  # 10 分钟未使用
+        ]
+        for key in stale_keys:
+            del self._buckets[key]
+        if stale_keys:
+            logger.info("rate_limiter.cleanup", removed=len(stale_keys))
 
     async def acquire(self, key: str = "default", tokens: int = 1) -> bool:
         """尝试获取令牌
@@ -40,6 +59,7 @@ class TokenBucketRateLimiter:
             bool: True 表示获取成功，False 表示被限流
         """
         async with self._lock:
+            await self._maybe_cleanup()
             bucket = self._buckets[key]
             now = time.monotonic()
 

@@ -34,9 +34,16 @@ class CircuitBreakerManager:
         if not breaker:
             return None
         
+        state_map = {
+            "closed": 0,
+            "open": 1,
+            "half-open": 2,
+        }
+        
         return {
             "platform": platform,
             "state": breaker.current_state,
+            "state_code": state_map.get(breaker.current_state, -1),
             "fail_count": breaker.fail_count,
             "fail_max": breaker.fail_max,
         }
@@ -47,6 +54,16 @@ class CircuitBreakerManager:
             self.get_status(platform)
             for platform in self._breakers.keys()
         ]
+    
+    def record_state(self, platform: str) -> None:
+        """将熔断器状态同步到 Prometheus 指标"""
+        try:
+            from backend.services.monitoring import circuit_state
+            status = self.get_status(platform)
+            if status:
+                circuit_state.labels(platform=platform).set(status["state_code"])
+        except ImportError:
+            pass
 
 
 # 全局单例

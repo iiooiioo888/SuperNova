@@ -6,11 +6,29 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from enum import Enum
 
 from backend.api.v1.deps import get_db
 from backend.services.task_service import task_service
 
 router = APIRouter(prefix="/tasks")
+
+
+# ── 枚举校验 ────────────────────────────────────────────
+
+class TaskTypeEnum(str, Enum):
+    FETCH_POSTS = "fetch_posts"
+    FETCH_COMMENTS = "fetch_comments"
+    FETCH_PROFILE = "fetch_profile"
+    DOWNLOAD_MEDIA = "download_media"
+    SEARCH = "search"
+
+
+class PriorityEnum(str, Enum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
 
 
 # ── 请求/响应模型 ────────────────────────────────────────
@@ -19,14 +37,11 @@ router = APIRouter(prefix="/tasks")
 class TaskCreateRequest(BaseModel):
     """创建任务请求"""
     name: str = Field(..., min_length=1, max_length=256, description="任务名称")
-    task_type: str = Field(
-        ...,
-        description="任务类型: fetch_posts / fetch_comments / fetch_profile / download_media / search",
-    )
+    task_type: TaskTypeEnum = Field(..., description="任务类型")
     platform: str = Field(..., min_length=1, max_length=64, description="目标平台")
     target: str = Field(..., min_length=1, max_length=512, description="目标标识")
     params: dict = Field(default_factory=dict, description="额外参数")
-    priority: str = Field(default="normal", description="优先级: low / normal / high / urgent")
+    priority: PriorityEnum = Field(default=PriorityEnum.NORMAL, description="优先级")
     scheduled_at: Optional[datetime] = Field(default=None, description="定时执行时间")
     max_retries: int = Field(default=3, ge=0, le=10, description="最大重试次数")
     created_by: str = Field(default="user", description="创建者")
@@ -35,6 +50,11 @@ class TaskCreateRequest(BaseModel):
 class TaskBatchCreateRequest(BaseModel):
     """批量创建任务"""
     tasks: list[TaskCreateRequest] = Field(..., min_length=1, max_length=100)
+
+
+class TaskBatchStatusRequest(BaseModel):
+    """批量查询任务状态"""
+    task_ids: list[int] = Field(..., min_length=1, max_length=200)
 
 
 class TaskUpdateStatusRequest(BaseModel):
@@ -298,3 +318,31 @@ async def archive_completed_tasks(
     """归档已完成任务到历史表"""
     count = await task_service.archive_completed_tasks(db, older_than_hours=older_than_hours)
     return {"archived": count}
+
+
+@router.post("/batch-status", response_model=dict)
+async def batch_get_task_status(body: TaskBatchStatusRequest, db=Depends(get_db)):
+    """批量查询任务状态（用于前端轮询）"""
+    from sqlalchemy import select
+    from backend.models.pg.task import TaskModel
+    
+    result = await db.execute(
+        select(TaskModel).where(TaskModel.id.in_(body.task_ids))
+    )
+    tasks = result.scalars().all()
+    
+    task_map = {t.id: t for t in tasks}
+    statuses = {}
+    for tid in body.task_ids:
+        t = task_map.get(tid)
+        if t:
+            statuses[tid] = {
+                "status": t.status,
+                "result_count": t.result_count,
+                "error_message": t.error_message,
+                "duration_seconds": t.duration_seconds,
+            }
+        else:
+            statuses[tid] = None
+    
+    return {"tasks": statuses}
