@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .api.v1 import tasks, platforms, accounts, data, health
+from .api.v1 import tasks, platforms, accounts, data, health, dashboard
 from .adapters import bilibili  # 注册适配器
 
 logger = structlog.get_logger()
@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(accounts.router, prefix=settings.api_prefix, tags=["accounts"])
     app.include_router(data.router, prefix=settings.api_prefix, tags=["data"])
     app.include_router(health.router, prefix=settings.api_prefix, tags=["health"])
+    app.include_router(dashboard.router, prefix=settings.api_prefix, tags=["dashboard"])
     
     @app.get("/")
     async def root():
