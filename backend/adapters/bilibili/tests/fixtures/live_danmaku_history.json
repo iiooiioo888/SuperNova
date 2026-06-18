@@ -1,0 +1,78 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "roomid": 123456,
+    "uid": 123456789,
+    "items": [
+      {
+        "msg_type": 0,
+        "msg": "主播好！",
+        "timestamp": 1704067200,
+        "uid": 987654321,
+        "uname": "观众 A",
+        "face": "https://i0.hdslb.com/bfs/face/user_a.jpg",
+        "medal": {
+          "target_name": "示例 UP 主",
+          "medal_name": "粉丝牌",
+          "level": 10,
+          "score": 5000,
+          "is_lighted": true,
+          "guard_level": 0
+        },
+        "user_level": 15,
+        "guard_level": 0,
+        "is_vip": false,
+        "is_admin": false,
+        "dm_type": 0,
+        "color": "#FFFFFF"
+      },
+      {
+        "msg_type": 0,
+        "msg": "这个项目看起来很有趣",
+        "timestamp": 1704067215,
+        "uid": 876543210,
+        "uname": "观众 B",
+        "face": "https://i0.hdslb.com/bfs/face/user_b.jpg",
+        "medal": null,
+        "user_level": 8,
+        "guard_level": 0,
+        "is_vip": false,
+        "is_admin": false,
+        "dm_type": 0,
+        "color": "#FFA500"
+      },
+      {
+        "msg_type": 1,
+        "msg": "观众 C 送出了 火箭 x1",
+        "timestamp": 1704067230,
+        "uid": 765432109,
+        "uname": "大佬 C",
+        "face": "https://i0.hdslb.com/bfs/face/user_c.jpg",
+        "medal": {
+          "target_name": "示例 UP 主",
+          "medal_name": "粉丝牌",
+          "level": 20,
+          "score": 50000,
+          "is_lighted": true,
+          "guard_level": 3
+        },
+        "user_level": 25,
+        "guard_level": 3,
+        "is_vip": true,
+        "is_admin": false,
+        "dm_type": 1,
+        "gift_info": {
+          "gift_id": 123,
+          "gift_name": "火箭",
+          "gift_num": 1,
+          "price": 2000,
+          "total_price": 2000
+        },
+        "color": "#FFD700"
+      }
+    ],
+    "cursor": "eyJvZmZzZXQiOjMwfQ==",
+    "has_more": true
+  }
+}

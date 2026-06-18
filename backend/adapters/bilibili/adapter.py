@@ -14,6 +14,8 @@ from ..base import (
     UnifiedComment,
     MediaRef,
     EngagementMetrics,
+    UnifiedDanmaku,
+    UnifiedLiveStream,
 )
 from ..registry import register_adapter
 from ...exceptions import AuthenticationError, RateLimitError
@@ -111,6 +113,67 @@ class BilibiliAdapter(BaseAdapter):
         # TODO: 实现实际的搜索 API
         # 占位实现
         pass
+    
+    # ── 直播相关方法重写 ───────────────────────────────────────
+    
+    async def fetch_live_stream(self, live_id: str) -> UnifiedLiveStream | None:
+        """
+        获取 B 站直播流信息
+        
+        Args:
+            live_id: 直播间 ID
+        
+        Returns:
+            UnifiedLiveStream 或 None（如果直播不存在或未开播）
+        """
+        logger.info("bilibili_adapter.fetch_live_stream", live_id=live_id)
+        
+        # TODO: 调用 B 站直播 API
+        # 示例：https://api.live.bilibili.com/room/v1/Room/get_info
+        return None
+    
+    async def fetch_danmaku(
+        self, live_id: str, params: FetchParams
+    ) -> AsyncIterator[UnifiedDanmaku]:
+        """
+        获取 B 站直播弹幕
+        
+        Args:
+            live_id: 直播间 ID
+            params: 采集参数
+        
+        Yields:
+            UnifiedDanmaku: 弹幕数据
+        """
+        logger.info("bilibili_adapter.fetch_danmaku", live_id=live_id, limit=params.limit)
+        
+        # TODO: 调用 B 站弹幕 API
+        # 示例：https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory
+        # 这里是占位实现
+        pass
+    
+    async def subscribe_danmaku(
+        self, live_id: str, callback: callable
+    ) -> None:
+        """
+        订阅 B 站实时弹幕流（WebSocket）
+        
+        Args:
+            live_id: 直播间 ID
+            callback: 异步回调函数，接收 UnifiedDanmaku 对象
+        
+        Note:
+            B 站使用 WebSocket 推送实时弹幕：wss://broadcastlv.chat.bilibili.com/sub
+        """
+        logger.info("bilibili_adapter.subscribe_danmaku", live_id=live_id)
+        
+        # TODO: 实现 WebSocket 连接和弹幕解析
+        # 这是高级功能，需要：
+        # 1. 建立 WebSocket 连接
+        # 2. 发送订阅消息
+        # 3. 解析二进制弹幕协议
+        # 4. 调用 callback 处理每条弹幕
+        raise NotImplementedError("B 站实时弹幕订阅待实现")
     
     def capabilities(self) -> list:
         """B 站特有能力"""

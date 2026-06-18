@@ -1,0 +1,23 @@
+{
+    "code": 0,
+    "message": "success",
+    "data": {
+        "list": {
+            "vlist": [
+                {
+                    "aid": 123456789,
+                    "bvid": "BV1xx411c7mD",
+                    "title": "测试视频标题",
+                    "description": "这是测试视频的描述信息",
+                    "play": 100000,
+                    "video_review": 5000,
+                    "favorites": 8000,
+                    "review": 3000,
+                    "created": 1700000000,
+                    "length": "10:30",
+                    "pic": "https://i0.hdslb.com/bfs/archive/test.jpg"
+                }
+            ]
+        }
+    }
+}

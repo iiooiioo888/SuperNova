@@ -1,43 +1,43 @@
 ```
-# Environment variables
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment
 .env
 .env.local
-.env.*
+*.env.*
 
-# Dependencies
-.venv/
-venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-target/
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Logs
-*.log
-
-# Editor/IDE
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *.tmp
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# Alembic
-alembic/versions/
-
-# Pre-commit
-.pre-commit-config.yaml
+# Logs
+*.log
 ```

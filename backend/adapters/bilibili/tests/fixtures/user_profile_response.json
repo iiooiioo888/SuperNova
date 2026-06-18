@@ -1,0 +1,21 @@
+{
+    "code": 0,
+    "message": "success",
+    "data": {
+        "mid": "123456",
+        "name": "测试用户",
+        "face": "https://i0.hdslb.com/bfs/face/test.jpg",
+        "sign": "这个人很懒，什么都没写",
+        "level": 6,
+        "sex": "男",
+        "following": 100,
+        "follower": 50000,
+        "likes": 200000,
+        "archive_count": 150,
+        "verified": true,
+        "official_verify": {
+            "type": 1,
+            "desc": "知名 UP 主"
+        }
+    }
+}
