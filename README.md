@@ -799,10 +799,62 @@ MIT License
 | **适配器层** | 10% | Bilibili 已完成，其他平台待接入 |
 | **功能开关** | 85% | 核心服务/API/前端已完成，ML 预测待实现 |
 | **账号池** | 70% | 基础状态机完成，权重算法待优化 |
-| **存储层** | 40% | PostgreSQL 模型完成，MongoDB/ES 待实现 |
+| **存储层** | 60% | PostgreSQL 模型/UPSERT/批量写入/ES 同步完成，MongoDB 待实现 |
 | **任务调度** | 30% | Celery 基础配置完成，定时任务待完善 |
 | **监控告警** | 20% | 结构化日志完成，Prometheus/Grafana 待实现 |
-| **前端 UI** | 15% | FeatureFlags 页面完成，其他管理页面待开发 |
+| **前端 UI** | 25% | FeatureFlags/DataViewer/Login 页面完成，其他管理页面待开发 |
+
+---
+
+## ✅ 已完成工作清单
+
+### 1. 🗄️ 存储层核心实现 (Storage Layer)
+
+**backend/storage/standard_store.py:**
+- ✅ 实现 UPSERT 逻辑 (INSERT ... ON CONFLICT DO UPDATE)，确保数据幂等性
+- ✅ 批量写入优化 (bulk_insert_posts)，减少数据库交互次数
+- ✅ 自动处理 UnifiedPost, UnifiedProfile, UnifiedComment 的标准化写入
+
+**backend/storage/index_sync.py:**
+- ✅ 实现 Outbox 模式的异步同步逻辑，将 PG 数据同步至 Elasticsearch
+- ✅ 定义 ES 索引映射 (create_index_mappings)，支持全文检索和聚合分析
+- ✅ 增加重试机制，防止网络波动导致数据丢失
+
+### 2. 📡 Bilibili 适配器核心逻辑 (Adapter Core)
+
+**backend/adapters/bilibili/adapter.py:**
+- ✅ 真实 HTTP 请求：集成 curl_cffi 模拟 TLS 指纹，绕过基础风控
+- ✅ WBI 签名：实现 B 站特有的 WBI 签名算法 (get_wbi_sign)，确保 API 调用合法
+- ✅ 数据解析：对接 parser.py，将原始 JSON 转换为 UnifiedPost/Profile 模型
+- ✅ 媒体下载：支持流式下载视频封面和截图至 MinIO/S3
+- ✅ 错误处理：捕获特定错误码 (如 -403, -412) 并映射为 RateLimitError 或 AuthenticationError
+
+**backend/adapters/bilibili/parser.py:**
+- ✅ 完善视频列表、详情、评论的解析逻辑
+- ✅ 处理嵌套 JSON 结构和缺失字段默认值
+
+### 3. 🎨 前端联调与完善 (Frontend Integration)
+
+**frontend/src/services/api.ts:**
+- ✅ 封装 Axios 拦截器，自动处理 JWT Token 的附加与刷新
+- ✅ 统一错误处理 (401 跳转登录，403 提示权限不足)
+
+**frontend/src/pages/Login.tsx:**
+- ✅ 实现登录表单，对接 /api/v1/auth/login，存储 Token 到 localStorage
+
+**frontend/src/pages/FeatureFlags.tsx (更新):**
+- ✅ 增加 RBAC 控制：非 Admin/Operator 角色隐藏"编辑"按钮
+- ✅ 增加 加载状态 和 操作反馈 (Toast 通知)
+- ✅ 对接真实的 GET /api/v1/feature-flags 和 POST /api/v1/feature-flags/{id}/toggle 接口
+
+**frontend/src/pages/DataViewer.tsx:**
+- ✅ 新增页面：展示从 ES 查询到的标准化数据列表，支持分页和简单筛选
+
+### 4. 🔧 配置与脚本
+
+- ✅ **scripts/init_es.py**: 初始化 ES 索引映射脚本
+- ✅ **scripts/create_admin.py**: 创建初始管理员账号脚本
+- ✅ **.env**: 补充 MINIO_ENDPOINT, ES_URL, JWT_SECRET 等必要变量
 
 ---
 
